@@ -47,10 +47,10 @@ src/
     supabase.ts         # Supabase client with SecureStore
     api.ts              # Authenticated fetch wrapper for Next.js API routes
     auth-context.tsx    # Auth provider + useAuth hook
-    constants.ts        # Shared constants (copied from web)
-    utils.ts            # Date utilities (copied from web)
+    constants.ts        # Re-exports from @family-planner/shared
+    utils.ts            # Re-exports from @family-planner/shared
   types/
-    index.ts            # TypeScript interfaces (copied from web)
+    index.ts            # Re-exports from @family-planner/shared
 ```
 
 ## Conventions
@@ -66,6 +66,9 @@ The app connects to two backends:
 2. **Next.js API routes** — recipe extraction (Claude API), Spoonacular search, grocery generation
 
 API routes authenticate via Bearer token (Supabase JWT). Set `EXPO_PUBLIC_API_URL` to your Vercel deployment URL.
+
+## Shared Package
+Types, constants, and utils come from `@family-planner/shared` (`file:../family-planner-shared`). Metro resolves it via `watchFolders` in `metro.config.js`. Do NOT duplicate shared code — add to the shared package instead.
 
 ## Version Plan
 - v1.0: Auth, recipes, Cook Mode, import, settings (App Store submission)
