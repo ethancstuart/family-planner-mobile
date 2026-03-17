@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useDeferredValue, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,24 +13,42 @@ import { Plus, Search, X } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRecipes, useToggleFavorite } from "@/hooks/use-recipes";
 import { RecipeCard } from "@/components/recipe-card";
-import { Loading } from "@/components/ui/loading";
+import { RecipeCardSkeleton } from "@/components/recipe-card-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Recipe } from "@/types";
 
 export default function RecipeListScreen() {
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const [filterFavorites, setFilterFavorites] = useState(false);
-  const { data: recipes, isLoading, refetch } = useRecipes(search);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const {
+    data: recipes,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useRecipes(deferredSearch);
   const toggleFavorite = useToggleFavorite();
   const { width } = useWindowDimensions();
 
-  // iPad: two-column layout
   const isTablet = width >= 768;
   const numColumns = isTablet ? 2 : 1;
 
-  const filteredRecipes = filterFavorites
-    ? (recipes ?? []).filter((r) => r.is_favorite)
-    : recipes ?? [];
+  // Extract unique tags
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    for (const r of recipes ?? []) {
+      for (const t of r.tags) tags.add(t);
+    }
+    return Array.from(tags).sort();
+  }, [recipes]);
+
+  const filteredRecipes = useMemo(() => {
+    let result = recipes ?? [];
+    if (filterFavorites) result = result.filter((r) => r.is_favorite);
+    if (activeTag) result = result.filter((r) => r.tags.includes(activeTag));
+    return result;
+  }, [recipes, filterFavorites, activeTag]);
 
   const handleRecipePress = useCallback((recipe: Recipe) => {
     router.push(`/(app)/(tabs)/recipes/${recipe.id}`);
@@ -48,7 +66,13 @@ export default function RecipeListScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: Recipe }) => (
-      <View style={isTablet ? { flex: 1, maxWidth: "50%", paddingHorizontal: 6 } : undefined}>
+      <View
+        style={
+          isTablet
+            ? { flex: 1, maxWidth: "50%", paddingHorizontal: 6 }
+            : undefined
+        }
+      >
         <RecipeCard
           recipe={item}
           onPress={() => handleRecipePress(item)}
@@ -92,23 +116,31 @@ export default function RecipeListScreen() {
         </View>
 
         {/* Filter pills */}
-        <View className="flex-row mt-2 gap-2">
+        <View className="flex-row mt-2 gap-2 flex-wrap">
           <Pressable
-            onPress={() => setFilterFavorites(false)}
+            onPress={() => {
+              setFilterFavorites(false);
+              setActiveTag(null);
+            }}
             className={`px-3 py-1.5 rounded-full ${
-              !filterFavorites ? "bg-primary-100" : "bg-gray-100"
+              !filterFavorites && !activeTag ? "bg-primary-100" : "bg-gray-100"
             }`}
           >
             <Text
               className={`text-sm font-medium ${
-                !filterFavorites ? "text-primary-700" : "text-gray-600"
+                !filterFavorites && !activeTag
+                  ? "text-primary-700"
+                  : "text-gray-600"
               }`}
             >
               All
             </Text>
           </Pressable>
           <Pressable
-            onPress={() => setFilterFavorites(true)}
+            onPress={() => {
+              setFilterFavorites(true);
+              setActiveTag(null);
+            }}
             className={`px-3 py-1.5 rounded-full ${
               filterFavorites ? "bg-primary-100" : "bg-gray-100"
             }`}
@@ -121,12 +153,36 @@ export default function RecipeListScreen() {
               Favorites
             </Text>
           </Pressable>
+          {allTags.map((tag) => (
+            <Pressable
+              key={tag}
+              onPress={() => {
+                setFilterFavorites(false);
+                setActiveTag(activeTag === tag ? null : tag);
+              }}
+              className={`px-3 py-1.5 rounded-full ${
+                activeTag === tag ? "bg-primary-100" : "bg-gray-100"
+              }`}
+            >
+              <Text
+                className={`text-sm font-medium ${
+                  activeTag === tag ? "text-primary-700" : "text-gray-600"
+                }`}
+              >
+                {tag}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       </View>
 
       {/* Recipe list */}
       {isLoading ? (
-        <Loading message="Loading recipes..." />
+        <View style={{ paddingHorizontal: 16 }}>
+          <RecipeCardSkeleton />
+          <RecipeCardSkeleton />
+          <RecipeCardSkeleton />
+        </View>
       ) : filteredRecipes.length === 0 ? (
         <EmptyState
           title={search ? "No recipes found" : "No recipes yet"}
@@ -142,11 +198,11 @@ export default function RecipeListScreen() {
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           numColumns={numColumns}
-          key={numColumns} // force re-render when columns change
+          key={numColumns}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
           refreshControl={
             <RefreshControl
-              refreshing={false}
+              refreshing={isRefetching}
               onRefresh={refetch}
               tintColor="#7c3aed"
             />

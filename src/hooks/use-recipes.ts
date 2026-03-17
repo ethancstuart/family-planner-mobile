@@ -64,7 +64,46 @@ export function useToggleFavorite() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async ({ id, is_favorite }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["recipes"] });
+      await queryClient.cancelQueries({ queryKey: ["recipe", id] });
+
+      // Snapshot previous values
+      const previousRecipes = queryClient.getQueriesData<Recipe[]>({
+        queryKey: ["recipes"],
+      });
+      const previousRecipe = queryClient.getQueryData<Recipe>(["recipe", id]);
+
+      // Optimistically update recipe lists
+      queryClient.setQueriesData<Recipe[]>(
+        { queryKey: ["recipes"] },
+        (old) =>
+          old?.map((r) => (r.id === id ? { ...r, is_favorite } : r)) ?? []
+      );
+
+      // Optimistically update single recipe
+      if (previousRecipe) {
+        queryClient.setQueryData<Recipe>(["recipe", id], {
+          ...previousRecipe,
+          is_favorite,
+        });
+      }
+
+      return { previousRecipes, previousRecipe };
+    },
+    onError: (_err, { id }, context) => {
+      // Rollback
+      if (context?.previousRecipes) {
+        for (const [key, data] of context.previousRecipes) {
+          queryClient.setQueryData(key, data);
+        }
+      }
+      if (context?.previousRecipe) {
+        queryClient.setQueryData(["recipe", id], context.previousRecipe);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["recipes"] });
     },
   });

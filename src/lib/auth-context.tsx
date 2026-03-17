@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { AppState } from "react-native";
 import { supabase } from "./supabase";
 import type { Session, User } from "@supabase/supabase-js";
+import { useQueryClient, QueryClient } from "@tanstack/react-query";
 
 interface AuthState {
   session: Session | null;
@@ -16,38 +18,44 @@ const AuthContext = createContext<AuthState>({
   signOut: async () => {},
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+  queryClient,
+}: {
+  children: React.ReactNode;
+  queryClient: QueryClient;
+}) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session with timeout fallback
-    const timeout = setTimeout(() => setIsLoading(false), 3000);
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
+    // Safety timeout — if INITIAL_SESSION never fires, stop loading
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "INITIAL_SESSION") {
         clearTimeout(timeout);
         setSession(session);
         setIsLoading(false);
-      })
-      .catch(() => {
-        clearTimeout(timeout);
-        setIsLoading(false);
-      });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+      } else {
+        setSession(session);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setSession(null);
+    queryClient.clear();
   };
 
   return (

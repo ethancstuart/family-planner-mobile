@@ -1,16 +1,19 @@
-import { Redirect, Stack } from "expo-router";
+import { useEffect } from "react";
+import { Stack, router } from "expo-router";
 import { useAuth } from "@/lib/auth-context";
 import { Loading } from "@/components/ui/loading";
 
 export default function AppLayout() {
   const { session, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <Loading fullScreen />;
-  }
+  useEffect(() => {
+    if (!isLoading && !session) {
+      router.replace("/(auth)/login");
+    }
+  }, [session, isLoading]);
 
-  if (!session) {
-    return <Redirect href="/(auth)/login" />;
+  if (isLoading || !session) {
+    return <Loading fullScreen />;
   }
 
   return (

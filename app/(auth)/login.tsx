@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { View, Text, Platform } from "react-native";
+import { View, Text, Platform, Alert } from "react-native";
 import { router } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as AuthSession from "expo-auth-session";
-import * as Crypto from "expo-crypto";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -37,12 +36,15 @@ export default function LoginScreen() {
         });
 
         if (error) throw error;
-        router.replace("/(app)/(tabs)/recipes");
+        router.replace("/");
       }
     } catch (e: unknown) {
-      const err = e as { code?: string };
+      const err = e as { code?: string; message?: string };
       if (err.code !== "ERR_REQUEST_CANCELED") {
-        console.error("Apple sign in error:", e);
+        Alert.alert(
+          "Sign In Failed",
+          err.message || "Apple sign in failed. Please try again."
+        );
       }
     } finally {
       setLoading(null);
@@ -53,18 +55,11 @@ export default function LoginScreen() {
     setLoading("google");
 
     try {
-      const nonce = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        Crypto.getRandomBytes(32).toString()
-      );
-
+      // Let Supabase handle PKCE — no custom nonce needed
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUri,
-          queryParams: {
-            nonce,
-          },
         },
       });
 
@@ -78,21 +73,51 @@ export default function LoginScreen() {
 
         if (result.type === "success") {
           const url = new URL(result.url);
-          const params = new URLSearchParams(url.hash.substring(1));
-          const accessToken = params.get("access_token");
-          const refreshToken = params.get("refresh_token");
+
+          // Try hash fragment first, then query params (Supabase PKCE uses query)
+          let accessToken: string | null = null;
+          let refreshToken: string | null = null;
+
+          if (url.hash) {
+            const hashParams = new URLSearchParams(url.hash.substring(1));
+            accessToken = hashParams.get("access_token");
+            refreshToken = hashParams.get("refresh_token");
+          }
+
+          if (!accessToken) {
+            accessToken = url.searchParams.get("access_token");
+            refreshToken = url.searchParams.get("refresh_token");
+          }
+
+          // If PKCE flow, exchange the code
+          if (!accessToken) {
+            const code = url.searchParams.get("code");
+            if (code) {
+              const { error: exchangeError } =
+                await supabase.auth.exchangeCodeForSession(code);
+              if (exchangeError) throw exchangeError;
+              router.replace("/");
+              return;
+            }
+          }
 
           if (accessToken && refreshToken) {
             await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
-            router.replace("/(app)/(tabs)/recipes");
+            router.replace("/");
+          } else {
+            Alert.alert(
+              "Sign In Failed",
+              "Could not complete Google sign in. Please try again."
+            );
           }
         }
       }
     } catch (e) {
-      console.error("Google sign in error:", e);
+      const msg = e instanceof Error ? e.message : "Google sign in failed";
+      Alert.alert("Sign In Failed", msg);
     } finally {
       setLoading(null);
     }
@@ -112,8 +137,12 @@ export default function LoginScreen() {
       <View className="gap-3">
         {Platform.OS === "ios" && (
           <AppleAuthentication.AppleAuthenticationButton
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            buttonType={
+              AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+            }
+            buttonStyle={
+              AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+            }
             cornerRadius={12}
             style={{ height: 50 }}
             onPress={signInWithApple}

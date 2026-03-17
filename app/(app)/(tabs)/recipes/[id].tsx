@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,10 +10,15 @@ import {
   Users,
   ChefHat,
   ExternalLink,
+  Trash2,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
-import { useRecipe, useToggleFavorite } from "@/hooks/use-recipes";
+import {
+  useRecipe,
+  useToggleFavorite,
+  useDeleteRecipe,
+} from "@/hooks/use-recipes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/loading";
@@ -23,6 +28,7 @@ export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: recipe, isLoading } = useRecipe(id);
   const toggleFavorite = useToggleFavorite();
+  const deleteRecipe = useDeleteRecipe();
   const [cookMode, setCookMode] = useState(false);
 
   if (isLoading || !recipe) {
@@ -44,17 +50,41 @@ export default function RecipeDetailScreen() {
     });
   };
 
+  const handleDelete = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      "Delete Recipe",
+      `Are you sure you want to delete "${recipe.title}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteRecipe.mutate(recipe.id, {
+              onSuccess: () => router.back(),
+            });
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View className="flex-1 bg-white">
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero image */}
-        {recipe.image_url && (
+        {/* Hero image or placeholder */}
+        {recipe.image_url ? (
           <Image
             source={{ uri: recipe.image_url }}
             style={{ width: "100%", height: 280 }}
             contentFit="cover"
             transition={200}
           />
+        ) : (
+          <View className="w-full items-center justify-center bg-primary-50" style={{ height: 200 }}>
+            <ChefHat size={48} color="#7c3aed" />
+          </View>
         )}
 
         {/* Back button overlay */}
@@ -69,16 +99,24 @@ export default function RecipeDetailScreen() {
             >
               <ArrowLeft size={22} color="#111827" />
             </Pressable>
-            <Pressable
-              onPress={handleToggleFavorite}
-              className="bg-white/80 rounded-full p-2"
-            >
-              <Heart
-                size={22}
-                color={recipe.is_favorite ? "#ef4444" : "#6b7280"}
-                fill={recipe.is_favorite ? "#ef4444" : "transparent"}
-              />
-            </Pressable>
+            <View className="flex-row gap-2">
+              <Pressable
+                onPress={handleDelete}
+                className="bg-white/80 rounded-full p-2"
+              >
+                <Trash2 size={22} color="#6b7280" />
+              </Pressable>
+              <Pressable
+                onPress={handleToggleFavorite}
+                className="bg-white/80 rounded-full p-2"
+              >
+                <Heart
+                  size={22}
+                  color={recipe.is_favorite ? "#ef4444" : "#6b7280"}
+                  fill={recipe.is_favorite ? "#ef4444" : "transparent"}
+                />
+              </Pressable>
+            </View>
           </View>
         </SafeAreaView>
 
