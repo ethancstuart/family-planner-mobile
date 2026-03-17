@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { View, Text, Platform, Alert } from "react-native";
+import { View, Text, Platform, Alert, KeyboardAvoidingView } from "react-native";
 import { router } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -15,7 +16,12 @@ const redirectUri = AuthSession.makeRedirectUri({
 });
 
 export default function LoginScreen() {
-  const [loading, setLoading] = useState<"apple" | "google" | null>(null);
+  const [loading, setLoading] = useState<"apple" | "google" | "email" | null>(
+    null
+  );
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showEmailForm, setShowEmailForm] = useState(false);
 
   const signInWithApple = async () => {
     if (Platform.OS !== "ios") return;
@@ -123,44 +129,108 @@ export default function LoginScreen() {
     }
   };
 
-  return (
-    <View className="flex-1 bg-white justify-center px-8">
-      <View className="items-center mb-12">
-        <Text className="text-4xl font-bold text-primary-700 mb-2">
-          Family Planner
-        </Text>
-        <Text className="text-lg text-gray-500 text-center">
-          Your family recipe vault & meal planner
-        </Text>
-      </View>
+  const signInWithEmail = async () => {
+    if (!email.trim() || !password.trim()) return;
+    setLoading("email");
 
-      <View className="gap-3">
-        {Platform.OS === "ios" && (
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={
-              AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-            }
-            buttonStyle={
-              AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-            }
-            cornerRadius={12}
-            style={{ height: 50 }}
-            onPress={signInWithApple}
-          />
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      if (error) throw error;
+      router.replace("/");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Sign in failed";
+      Alert.alert("Sign In Failed", msg);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1 bg-white"
+    >
+      <View className="flex-1 justify-center px-8">
+        <View className="items-center mb-12">
+          <Text className="text-4xl font-bold text-primary-700 mb-2">
+            Family Planner
+          </Text>
+          <Text className="text-lg text-gray-500 text-center">
+            Your family recipe vault & meal planner
+          </Text>
+        </View>
+
+        {showEmailForm ? (
+          <View className="gap-3">
+            <Input
+              label="Email"
+              placeholder="you@example.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <Input
+              label="Password"
+              placeholder="Your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <Button
+              title="Sign In"
+              onPress={signInWithEmail}
+              size="lg"
+              loading={loading === "email"}
+              disabled={!email.trim() || !password.trim()}
+            />
+            <Button
+              title="Back"
+              onPress={() => setShowEmailForm(false)}
+              variant="ghost"
+            />
+          </View>
+        ) : (
+          <View className="gap-3">
+            {Platform.OS === "ios" && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={
+                  AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+                }
+                buttonStyle={
+                  AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                }
+                cornerRadius={12}
+                style={{ height: 50 }}
+                onPress={signInWithApple}
+              />
+            )}
+
+            <Button
+              title="Continue with Google"
+              onPress={signInWithGoogle}
+              variant="outline"
+              size="lg"
+              loading={loading === "google"}
+            />
+
+            <Button
+              title="Sign in with Email"
+              onPress={() => setShowEmailForm(true)}
+              variant="ghost"
+              size="lg"
+            />
+          </View>
         )}
 
-        <Button
-          title="Continue with Google"
-          onPress={signInWithGoogle}
-          variant="outline"
-          size="lg"
-          loading={loading === "google"}
-        />
+        <Text className="text-xs text-gray-400 text-center mt-8 leading-5">
+          By continuing, you agree to our Terms of Service and Privacy Policy.
+        </Text>
       </View>
-
-      <Text className="text-xs text-gray-400 text-center mt-8 leading-5">
-        By continuing, you agree to our Terms of Service and Privacy Policy.
-      </Text>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
