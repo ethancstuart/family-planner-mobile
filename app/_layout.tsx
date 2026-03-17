@@ -15,8 +15,11 @@ import { ErrorBoundary } from "@/components/error-boundary";
 // Suppress noisy dev-only warnings
 LogBox.ignoreLogs([
   "SecureStore",
+  "AsyncStorage",
+  "NativeModule",
   "Could not find a navigation",
   "Possible unhandled promise rejection",
+  "missing the required default export",
 ]);
 
 const queryClient = new QueryClient({
