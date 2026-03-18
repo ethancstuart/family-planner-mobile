@@ -68,7 +68,7 @@ The app connects to two backends:
 API routes authenticate via Bearer token (Supabase JWT). Set `EXPO_PUBLIC_API_URL` to your Vercel deployment URL.
 
 ## Shared Package
-Types, constants, and utils come from `@family-planner/shared` (`file:../family-planner-shared`). Metro resolves it via `watchFolders` in `metro.config.js`. Do NOT duplicate shared code — add to the shared package instead.
+Types, constants, and utils come from `@family-planner/shared` (`github:ethancstuart/family-planner-shared`). Metro resolves it via `watchFolders` in `metro.config.js`. Do NOT duplicate shared code — add to the shared package instead.
 
 ## Version Plan
 - v1.0: Auth, recipes, Cook Mode, import, settings (App Store submission)
