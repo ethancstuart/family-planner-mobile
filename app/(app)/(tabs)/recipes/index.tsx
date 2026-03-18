@@ -1,4 +1,4 @@
-import { useState, useCallback, useDeferredValue, useMemo } from "react";
+import { useState, useCallback, useDeferredValue, useMemo, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,25 +9,46 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { router } from "expo-router";
-import { Plus, Search, X } from "lucide-react-native";
+import { Plus, Search, X, AlertCircle } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRecipes, useToggleFavorite } from "@/hooks/use-recipes";
 import { RecipeCard } from "@/components/recipe-card";
 import { RecipeCardSkeleton } from "@/components/recipe-card-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
 import type { Recipe } from "@/types";
 
 export default function RecipeListScreen() {
   const [search, setSearch] = useState("");
-  const deferredSearch = useDeferredValue(search);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const deferredSearch = useDeferredValue(debouncedSearch);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    debounceTimer.current = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(debounceTimer.current);
+  }, [search]);
+
   const {
-    data: recipes,
+    data: recipesData,
     isLoading,
     refetch,
     isRefetching,
+    error,
+    isError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
   } = useRecipes(deferredSearch);
+
+  const recipes = useMemo(
+    () => recipesData?.pages.flat() ?? [],
+    [recipesData]
+  );
   const toggleFavorite = useToggleFavorite();
   const { width } = useWindowDimensions();
 
@@ -119,6 +140,7 @@ export default function RecipeListScreen() {
         <View className="flex-row mt-2 gap-2 flex-wrap">
           <Pressable
             onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setFilterFavorites(false);
               setActiveTag(null);
             }}
@@ -138,6 +160,7 @@ export default function RecipeListScreen() {
           </Pressable>
           <Pressable
             onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setFilterFavorites(true);
               setActiveTag(null);
             }}
@@ -157,6 +180,7 @@ export default function RecipeListScreen() {
             <Pressable
               key={tag}
               onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setFilterFavorites(false);
                 setActiveTag(activeTag === tag ? null : tag);
               }}
@@ -183,6 +207,17 @@ export default function RecipeListScreen() {
           <RecipeCardSkeleton />
           <RecipeCardSkeleton />
         </View>
+      ) : isError ? (
+        <View className="flex-1 items-center justify-center px-8">
+          <AlertCircle size={40} color="#ef4444" />
+          <Text className="text-lg font-semibold text-gray-900 mt-3">
+            Something went wrong
+          </Text>
+          <Text className="text-sm text-gray-500 mt-1 text-center mb-4">
+            {error?.message ?? "Failed to load recipes"}
+          </Text>
+          <Button title="Try Again" onPress={() => refetch()} variant="outline" />
+        </View>
       ) : filteredRecipes.length === 0 ? (
         <EmptyState
           title={search ? "No recipes found" : "No recipes yet"}
@@ -208,6 +243,12 @@ export default function RecipeListScreen() {
             />
           }
           showsVerticalScrollIndicator={false}
+          onEndReached={() => hasNextPage && fetchNextPage()}
+          onEndReachedThreshold={0.5}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          initialNumToRender={10}
         />
       )}
     </SafeAreaView>

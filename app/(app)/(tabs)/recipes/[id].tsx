@@ -120,7 +120,7 @@ export default function RecipeDetailScreen() {
           </View>
         </SafeAreaView>
 
-        <View className="px-5 pt-5 pb-8">
+        <View className="px-5 pt-5 pb-12">
           {/* Title & meta */}
           <Text className="text-2xl font-bold text-gray-900">
             {recipe.title}

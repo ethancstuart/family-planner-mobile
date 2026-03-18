@@ -112,6 +112,11 @@ export default function ImportRecipeScreen() {
 
         clearTimeout(timeout);
 
+        // Belt-and-suspenders: guard membership before insert
+        if (!membership) {
+          throw new Error("No household found. Please complete onboarding.");
+        }
+
         // Save the extracted recipe
         const { error } = await supabase.from("recipes").insert({
           ...data.recipe,
@@ -152,15 +157,30 @@ export default function ImportRecipeScreen() {
   );
 
   const handleUrlImport = useCallback(() => {
-    if (!url.trim()) return;
+    const trimmed = url.trim();
+    if (!trimmed) return;
+
+    // Validate URL format
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        Alert.alert("Invalid URL", "Please enter a URL starting with http:// or https://");
+        return;
+      }
+    } catch {
+      Alert.alert("Invalid URL", "Please enter a valid URL starting with http:// or https://");
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const isVideo =
-      url.includes("tiktok.com") ||
-      url.includes("youtube.com") ||
-      url.includes("youtu.be") ||
-      url.includes("instagram.com/reel");
+      trimmed.includes("tiktok.com") ||
+      trimmed.includes("youtube.com") ||
+      trimmed.includes("youtu.be") ||
+      trimmed.includes("instagram.com/reel");
 
-    extractRecipe(url.trim(), isVideo ? "video" : "url");
+    extractRecipe(trimmed, isVideo ? "video" : "url");
   }, [url, extractRecipe]);
 
   const handleCameraImport = useCallback(async () => {
@@ -223,6 +243,8 @@ export default function ImportRecipeScreen() {
             className="flex-1 px-4"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            contentContainerStyle={{ paddingBottom: 40 }}
           >
             {/* Clipboard suggestion */}
             {clipboardUrl && (

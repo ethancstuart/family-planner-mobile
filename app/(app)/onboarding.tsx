@@ -11,7 +11,6 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BookOpen, CalendarDays, ShoppingCart, ChefHat } from "lucide-react-native";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -32,30 +31,11 @@ export default function OnboardingScreen() {
     if (!name.trim() || !user) return;
     setLoading(true);
     try {
-      // Insert household directly via Supabase (no server-side secrets needed)
-      const { data: household, error: hhError } = await supabase
-        .from("households")
-        .insert({ name: name.trim() })
-        .select("id")
-        .single();
-
-      if (hhError) throw hhError;
-
-      // Add current user as owner
-      const { error: memError } = await supabase
-        .from("household_members")
-        .insert({
-          household_id: household.id,
-          user_id: user.id,
-          role: "owner",
-        });
-
-      if (memError) throw memError;
-
-      // Create default household_settings row
-      await supabase
-        .from("household_settings")
-        .insert({ household_id: household.id });
+      // Use atomic API route (RPC) instead of 3 separate inserts
+      await apiFetch("/api/household/create", {
+        method: "POST",
+        body: JSON.stringify({ name: name.trim() }),
+      });
 
       queryClient.invalidateQueries({ queryKey: ["household"] });
       queryClient.invalidateQueries({ queryKey: ["household-membership"] });

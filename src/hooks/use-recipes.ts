@@ -1,21 +1,24 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useHousehold } from "./use-household";
 import type { Recipe } from "@/types";
 
+const PAGE_SIZE = 20;
+
 export function useRecipes(search?: string) {
   const { membership } = useHousehold();
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["recipes", membership?.household_id, search],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       if (!membership) return [];
 
       let query = supabase
         .from("recipes")
         .select("*")
         .eq("household_id", membership.household_id)
-        .order("updated_at", { ascending: false });
+        .order("updated_at", { ascending: false })
+        .range(pageParam, pageParam + PAGE_SIZE - 1);
 
       if (search?.trim()) {
         query = query.ilike("title", `%${search.trim()}%`);
@@ -24,6 +27,11 @@ export function useRecipes(search?: string) {
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Recipe[];
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.flat().length;
     },
     enabled: !!membership,
   });
@@ -70,16 +78,23 @@ export function useToggleFavorite() {
       await queryClient.cancelQueries({ queryKey: ["recipe", id] });
 
       // Snapshot previous values
-      const previousRecipes = queryClient.getQueriesData<Recipe[]>({
+      const previousRecipes = queryClient.getQueriesData<InfiniteData<Recipe[]>>({
         queryKey: ["recipes"],
       });
       const previousRecipe = queryClient.getQueryData<Recipe>(["recipe", id]);
 
-      // Optimistically update recipe lists
-      queryClient.setQueriesData<Recipe[]>(
+      // Optimistically update recipe lists (infinite query pages)
+      queryClient.setQueriesData<InfiniteData<Recipe[]>>(
         { queryKey: ["recipes"] },
-        (old) =>
-          old?.map((r) => (r.id === id ? { ...r, is_favorite } : r)) ?? []
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) =>
+              page.map((r) => (r.id === id ? { ...r, is_favorite } : r))
+            ),
+          };
+        }
       );
 
       // Optimistically update single recipe

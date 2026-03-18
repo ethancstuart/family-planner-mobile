@@ -41,5 +41,7 @@ export function useHousehold() {
     household: householdQuery.data ?? null,
     membership: membershipQuery.data ?? null,
     isLoading: membershipQuery.isLoading || householdQuery.isLoading,
+    error: membershipQuery.error || householdQuery.error,
+    isError: membershipQuery.isError || householdQuery.isError,
   };
 }
