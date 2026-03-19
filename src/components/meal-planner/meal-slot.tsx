@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { View, Text, Pressable, ActionSheetIOS, Platform, Alert } from "react-native";
+import { Text, Pressable, ActionSheetIOS, Platform, Alert } from "react-native";
 import { Plus } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { MealSlotCard } from "./meal-slot-card";

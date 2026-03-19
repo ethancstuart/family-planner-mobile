@@ -26,8 +26,6 @@ import { ShoppingMode } from "@/components/grocery/shopping-mode";
 import { Loading } from "@/components/ui/loading";
 import { Button } from "@/components/ui/button";
 
-import type { GroceryItem } from "@/types";
-
 export default function GroceryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [shoppingMode, setShoppingMode] = useState(false);

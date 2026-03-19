@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useHousehold } from "./use-household";
-import { getWeekStartDate } from "@/lib/utils";
 import type { MealPlan, MealPlanSlot, Recipe } from "@/types";
 
 /**

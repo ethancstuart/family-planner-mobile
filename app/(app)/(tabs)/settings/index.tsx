@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   Alert,
-  Pressable,
   Share,
   KeyboardAvoidingView,
   Platform,
@@ -19,10 +18,7 @@ import {
   User,
   Users,
   UserPlus,
-  Crown,
-  ChevronRight,
 } from "lucide-react-native";
-import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -43,7 +39,6 @@ interface MemberRow {
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { household, membership } = useHousehold();
-  const queryClient = useQueryClient();
   const isOwner = membership?.role === "owner";
 
   const [claudeKey, setClaudeKey] = useState("");

@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { AppState } from "react-native";
 import { supabase } from "./supabase";
 import type { Session, User } from "@supabase/supabase-js";
-import { useQueryClient, QueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 
 interface AuthState {
   session: Session | null;

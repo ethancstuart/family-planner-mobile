@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import { ChevronLeft, ChevronRight, MoreVertical } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
-import { parseDate, DAYS_OF_WEEK_SHORT } from "@family-planner/shared";
+import { parseDate } from "@family-planner/shared";
 
 interface WeekNavigatorProps {
   weekStart: string;

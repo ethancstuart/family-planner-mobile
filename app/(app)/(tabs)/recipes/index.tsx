@@ -42,7 +42,6 @@ export default function RecipeListScreen() {
     isError,
     hasNextPage,
     fetchNextPage,
-    isFetchingNextPage,
   } = useRecipes(deferredSearch);
 
   const recipes = useMemo(
