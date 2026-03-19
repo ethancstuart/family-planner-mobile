@@ -2,6 +2,10 @@ import { supabase } from "./supabase";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
 
+if (API_BASE_URL && !API_BASE_URL.startsWith("https://")) {
+  throw new Error("EXPO_PUBLIC_API_URL must use HTTPS");
+}
+
 /**
  * Make an authenticated request to the Next.js API routes.
  * Passes the Supabase JWT as a Bearer token.

@@ -31,7 +31,7 @@ export default function RecipeDetailScreen() {
   const deleteRecipe = useDeleteRecipe();
   const [cookMode, setCookMode] = useState(false);
 
-  if (isLoading || !recipe) {
+  if (!id || isLoading || !recipe) {
     return <Loading fullScreen message="Loading recipe..." />;
   }
 

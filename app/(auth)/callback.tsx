@@ -13,6 +13,9 @@ export default function AuthCallback() {
   useEffect(() => {
     async function handleCallback() {
       try {
+        // Token path: used by Apple Sign-In (native flow passes tokens directly).
+        // Code path (PKCE): used by Google OAuth via expo-auth-session.
+        // Both are standard Supabase auth patterns.
         if (params.access_token && params.refresh_token) {
           await supabase.auth.setSession({
             access_token: params.access_token,

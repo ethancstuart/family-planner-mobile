@@ -46,6 +46,7 @@ export function WeekNavigator({
           onPress={() => handlePress(onPrevWeek)}
           className="p-2 rounded-full active:bg-gray-100"
           hitSlop={8}
+          accessibilityLabel="Previous week"
         >
           <ChevronLeft size={20} color="#374151" />
         </Pressable>
@@ -58,6 +59,7 @@ export function WeekNavigator({
           onPress={() => handlePress(onNextWeek)}
           className="p-2 rounded-full active:bg-gray-100"
           hitSlop={8}
+          accessibilityLabel="Next week"
         >
           <ChevronRight size={20} color="#374151" />
         </Pressable>

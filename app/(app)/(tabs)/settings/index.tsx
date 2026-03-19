@@ -82,7 +82,16 @@ export default function SettingsScreen() {
         .select("user_id, role, joined_at, profiles(email, full_name)")
         .eq("household_id", membership!.household_id);
 
-      if (data) setMembers(data as unknown as MemberRow[]);
+      if (data) {
+        setMembers(
+          (data as any[]).map((m) => ({
+            user_id: m.user_id,
+            role: m.role,
+            joined_at: m.joined_at,
+            profiles: Array.isArray(m.profiles) ? m.profiles[0] ?? null : m.profiles,
+          }))
+        );
+      }
     }
 
     loadMembers();

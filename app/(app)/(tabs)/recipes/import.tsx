@@ -163,8 +163,8 @@ export default function ImportRecipeScreen() {
     // Validate URL format
     try {
       const parsed = new URL(trimmed);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        Alert.alert("Invalid URL", "Please enter a URL starting with http:// or https://");
+      if (parsed.protocol !== "https:") {
+        Alert.alert("Invalid URL", "Please use an HTTPS URL.");
         return;
       }
     } catch {
@@ -186,12 +186,16 @@ export default function ImportRecipeScreen() {
   const handleCameraImport = useCallback(async () => {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ["images"],
-      quality: 0.8,
+      quality: 0.7,
       base64: true,
     });
 
     if (!result.canceled && result.assets[0].base64) {
       const asset = result.assets[0];
+      if (asset.base64 && asset.base64.length > 5 * 1024 * 1024) {
+        Alert.alert("Image too large", "Please use a smaller photo.");
+        return;
+      }
       const mimeType = asset.mimeType ?? "image/jpeg";
       const base64 = `data:${mimeType};base64,${asset.base64}`;
       extractRecipe("", "image", base64);
@@ -201,12 +205,16 @@ export default function ImportRecipeScreen() {
   const handlePhotoLibrary = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      quality: 0.8,
+      quality: 0.7,
       base64: true,
     });
 
     if (!result.canceled && result.assets[0].base64) {
       const asset = result.assets[0];
+      if (asset.base64 && asset.base64.length > 5 * 1024 * 1024) {
+        Alert.alert("Image too large", "Please use a smaller photo.");
+        return;
+      }
       const mimeType = asset.mimeType ?? "image/jpeg";
       const base64 = `data:${mimeType};base64,${asset.base64}`;
       extractRecipe("", "image", base64);

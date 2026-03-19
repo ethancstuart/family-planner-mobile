@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { View, Text } from "react-native";
 import { parseDate, DAYS_OF_WEEK_SHORT, MEAL_TYPES } from "@family-planner/shared";
 import { MealSlot } from "./meal-slot";
@@ -14,7 +15,7 @@ interface DayColumnProps {
   onRemoveMeal: (slotId: string) => void;
 }
 
-export function DayColumn({
+export const DayColumn = memo(function DayColumn({
   weekStart,
   dayIndex,
   slots,
@@ -78,4 +79,4 @@ export function DayColumn({
       </View>
     </View>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { View, Text, Pressable, ActionSheetIOS, Platform, Alert } from "react-native";
 import { Plus } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
@@ -14,7 +15,7 @@ interface MealSlotProps {
   onRemoveMeal: (slotId: string) => void;
 }
 
-export function MealSlot({
+export const MealSlot = memo(function MealSlot({
   mealType,
   slot,
   onAddMeal,
@@ -84,4 +85,4 @@ export function MealSlot({
       onLongPress={showSlotActions}
     />
   );
-}
+});

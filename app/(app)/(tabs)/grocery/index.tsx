@@ -135,6 +135,8 @@ export default function GroceryScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
           refreshing={isRefetching}
           onRefresh={refetch}
+          maxToRenderPerBatch={15}
+          windowSize={10}
         />
       )}
 

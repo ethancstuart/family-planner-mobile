@@ -18,7 +18,6 @@ LogBox.ignoreLogs([
   "AsyncStorage",
   "NativeModule",
   "Could not find a navigation",
-  "Possible unhandled promise rejection",
   "missing the required default export",
 ]);
 

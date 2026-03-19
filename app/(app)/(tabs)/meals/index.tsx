@@ -189,7 +189,10 @@ export default function MealsScreen() {
 
   const handleDeleteTemplate = useCallback(
     (templateId: string) => {
-      deleteTemplate.mutate({ templateId });
+      deleteTemplate.mutate(
+        { templateId },
+        { onError: () => Alert.alert("Error", "Failed to delete template.") }
+      );
     },
     [deleteTemplate]
   );

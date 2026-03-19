@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Pressable, View, Text } from "react-native";
 import { Image } from "expo-image";
 import { Heart, Clock, ChefHat } from "lucide-react-native";
@@ -11,7 +12,7 @@ interface RecipeCardProps {
   onToggleFavorite: () => void;
 }
 
-export function RecipeCard({
+export const RecipeCard = memo(function RecipeCard({
   recipe,
   onPress,
   onToggleFavorite,
@@ -52,7 +53,11 @@ export function RecipeCard({
           >
             {recipe.title}
           </Text>
-          <Pressable onPress={handleFavorite} hitSlop={8}>
+          <Pressable
+            onPress={handleFavorite}
+            hitSlop={8}
+            accessibilityLabel={recipe.is_favorite ? "Remove from favorites" : "Add to favorites"}
+          >
             <Heart
               size={22}
               color={recipe.is_favorite ? "#ef4444" : "#d1d5db"}
@@ -83,4 +88,4 @@ export function RecipeCard({
       </View>
     </Pressable>
   );
-}
+});

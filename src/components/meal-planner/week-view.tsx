@@ -41,7 +41,7 @@ export function WeekView({
         scrollRef.current?.scrollTo({ x: offset, animated: false });
       }, 100);
     }
-  }, [weekStart]);
+  }, [weekStart, cardWidth, todayDayIndex, isTablet]);
 
   const days = Array.from({ length: 7 }, (_, i) => i as DayOfWeek);
 

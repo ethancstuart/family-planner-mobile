@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { router } from "expo-router";
-import { Plus, Search, X, AlertCircle } from "lucide-react-native";
+import { Plus, Search, X, AlertCircle, Compass } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRecipes, useToggleFavorite } from "@/hooks/use-recipes";
@@ -110,12 +110,20 @@ export default function RecipeListScreen() {
       <View className="px-4 pb-3">
         <View className="flex-row items-center justify-between mb-3">
           <Text className="text-2xl font-bold text-gray-900">Recipes</Text>
-          <Pressable
-            onPress={() => router.push("/(app)/(tabs)/recipes/import")}
-            className="bg-primary-700 rounded-full p-2.5 active:bg-primary-800"
-          >
-            <Plus size={20} color="#fff" />
-          </Pressable>
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={() => router.push("/(app)/(tabs)/recipes/discover")}
+              className="bg-gray-100 rounded-full p-2.5 active:bg-gray-200"
+            >
+              <Compass size={20} color="#374151" />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/(app)/(tabs)/recipes/import")}
+              className="bg-primary-700 rounded-full p-2.5 active:bg-primary-800"
+            >
+              <Plus size={20} color="#fff" />
+            </Pressable>
+          </View>
         </View>
 
         {/* Search bar */}
@@ -243,6 +251,7 @@ export default function RecipeListScreen() {
             />
           }
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
           onEndReached={() => hasNextPage && fetchNextPage()}
           onEndReachedThreshold={0.5}
           removeClippedSubviews={true}

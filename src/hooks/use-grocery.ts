@@ -14,7 +14,7 @@ export function useGroceryLists() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("grocery_lists")
-        .select("*, grocery_items(*)")
+        .select("*, grocery_items(id, checked)")
         .eq("household_id", householdId!)
         .order("created_at", { ascending: false });
 
@@ -36,6 +36,9 @@ export function useGroceryLists() {
 
 /** Single grocery list detail. */
 export function useGroceryList(id: string | undefined) {
+  const { membership } = useHousehold();
+  const householdId = membership?.household_id;
+
   return useQuery({
     queryKey: ["grocery-list", id],
     queryFn: async () => {
@@ -43,12 +46,13 @@ export function useGroceryList(id: string | undefined) {
         .from("grocery_lists")
         .select("*")
         .eq("id", id!)
+        .eq("household_id", householdId!)
         .single();
 
       if (error) throw error;
       return data as GroceryList;
     },
-    enabled: !!id,
+    enabled: !!id && !!householdId,
   });
 }
 

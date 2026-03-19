@@ -2,7 +2,7 @@
   "expo": {
     "name": "Family Planner",
     "slug": "family-planner-mobile",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -30,9 +30,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.familyplanner.app",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": []
     },
     "plugins": [
       "expo-router",

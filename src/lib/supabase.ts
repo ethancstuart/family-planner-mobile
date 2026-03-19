@@ -15,9 +15,11 @@ try {
   const mod = require("@react-native-async-storage/async-storage");
   nativeStorage = mod.default ?? mod;
 } catch {
-  console.warn(
-    "AsyncStorage native module unavailable — using in-memory storage. Rebuild dev client to fix."
-  );
+  if (__DEV__) {
+    console.warn(
+      "AsyncStorage native module unavailable — using in-memory storage. Rebuild dev client to fix."
+    );
+  }
 }
 
 const memoryStore = new Map<string, string>();
